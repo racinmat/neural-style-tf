@@ -223,9 +223,9 @@ def parse_args():
 
     # create directories for output
     if args.video:
-        maybe_make_directory(args.video_output_dir)
+        os.makedirs(args.video_output_dir, exist_ok=True)
     else:
-        maybe_make_directory(args.img_output_dir)
+        os.makedirs(args.img_output_dir, exist_ok=True)
 
     return args
 
@@ -571,11 +571,6 @@ def normalize(weights):
         return [0.] * len(weights)
 
 
-def maybe_make_directory(dir_path):
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
-
-
 def check_image(img, path):
     if img is None:
         raise OSError(errno.ENOENT, "No such file", path)
@@ -593,7 +588,8 @@ def stylize_image(content_img, style_imgs, init_img):
 
         output_img = compute_style_transfer(L_total, content_img, init_img, net, optimizer, sess)
 
-    write_image_output(output_img, content_img, style_imgs, init_img)
+    out_dir = os.path.join(args.img_output_dir, args.img_name + '-' + datetime.now().strftime('%Y-%m-%d--%H-%M'))
+    write_image_output(out_dir, output_img, content_img, style_imgs, init_img)
 
 
 def stylize_video(content_img, style_imgs, init_img, frame):
@@ -693,9 +689,8 @@ def write_video_output(frame, output_img):
     write_image(path, output_img)
 
 
-def write_image_output(output_img, content_img, style_imgs, init_img):
-    out_dir = os.path.join(args.img_output_dir, args.img_name + '-' + datetime.now().strftime('%Y-%m-%d--%H-%M'))
-    maybe_make_directory(out_dir)
+def write_image_output(out_dir, output_img, content_img, style_imgs, init_img):
+    os.makedirs(out_dir, exist_ok=True)
     img_path = os.path.join(out_dir, args.img_name + '.png')
     content_path = os.path.join(out_dir, 'content.png')
     init_path = os.path.join(out_dir, 'init.png')

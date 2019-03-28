@@ -1,7 +1,9 @@
 import itertools
 import tensorflow as tf
 import time
+import os.path as osp
 import neural_style
+from datetime import datetime
 from neural_style import parse_args, get_init_image, build_optimizer, get_content_image, get_style_images, \
     build_model, compute_style_transfer, write_image_output
 
@@ -10,9 +12,11 @@ def main():
     neural_style.args = parse_args()
     args = neural_style.args
     hparams = {
-        'style_weights': [1e2, 1e3, 1e4, 1e5, 1e6],
+        'style_weight': [1e2, 1e3, 1e4, 1e5, 1e6],
+        'content_weight': [5e-2, 5e-1, 5e0, 5e1, 5e2],
         'original_colors': [True, False],
     }
+    out_dir = osp.join(args.img_output_dir, 'hparams-result-' + datetime.now().strftime('%Y-%m-%d--%H-%M'))
     with tf.Graph().as_default(), tf.device(args.device), tf.Session() as sess:
         content_img = get_content_image(args.content_img)
         style_imgs = get_style_images(content_img)
@@ -34,7 +38,7 @@ def main():
             tock = time.time()
             print('Single image elapsed time: {}'.format(tock - tick))
 
-            write_image_output(output_img, content_img, style_imgs, init_img)
+            write_image_output(out_dir, output_img, content_img, style_imgs, init_img)
 
 
 if __name__ == '__main__':

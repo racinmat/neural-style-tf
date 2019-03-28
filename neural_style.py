@@ -69,7 +69,7 @@ def parse_args():
 
     parser.add_argument('--temporal_weight', type=float,
                         default=2e2,
-                        help='Weight for the temporal loss function. (default: %(default)s)')
+                        help='Weight for the temporal loss function, used for video. (default: %(default)s)')
 
     parser.add_argument('--content_loss_function', type=int,
                         default=1,

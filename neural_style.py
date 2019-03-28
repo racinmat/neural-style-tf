@@ -689,9 +689,9 @@ def write_video_output(frame, output_img):
     write_image(path, output_img)
 
 
-def write_image_output(out_dir, output_img, content_img, style_imgs, init_img):
+def write_image_output(out_dir, output_img, content_img, style_imgs, init_img, prefix=''):
     os.makedirs(out_dir, exist_ok=True)
-    img_path = os.path.join(out_dir, args.img_name + '.png')
+    img_path = os.path.join(out_dir, prefix + args.img_name + '.png')
     content_path = os.path.join(out_dir, 'content.png')
     init_path = os.path.join(out_dir, 'init.png')
 
@@ -705,29 +705,27 @@ def write_image_output(out_dir, output_img, content_img, style_imgs, init_img):
         index += 1
 
     # save the configuration settings
-    out_file = os.path.join(out_dir, 'meta_data.txt')
-    f = open(out_file, 'w')
-    f.write('image_name: {}\n'.format(args.img_name))
-    f.write('content: {}\n'.format(args.content_img))
-    index = 0
-    for style_img, weight in zip(args.style_imgs, args.style_imgs_weights):
-        f.write('styles[' + str(index) + ']: {} * {}\n'.format(weight, style_img))
-        index += 1
-    index = 0
-    if args.style_mask_imgs is not None:
-        for mask in args.style_mask_imgs:
-            f.write('style_masks[' + str(index) + ']: {}\n'.format(mask))
+    out_file = os.path.join(out_dir, prefix + 'meta_data.txt')
+    with open(out_file, 'w') as f:
+        f.write('image_name: {}\n'.format(args.img_name))
+        f.write('content: {}\n'.format(args.content_img))
+        index = 0
+        for style_img, weight in zip(args.style_imgs, args.style_imgs_weights):
+            f.write('styles[' + str(index) + ']: {} * {}\n'.format(weight, style_img))
             index += 1
-    f.write('init_type: {}\n'.format(args.init_img_type))
-    f.write('content_weight: {}\n'.format(args.content_weight))
-    f.write('style_weight: {}\n'.format(args.style_weight))
-    f.write('tv_weight: {}\n'.format(args.tv_weight))
-    f.write('content_layers: {}\n'.format(args.content_layers))
-    f.write('style_layers: {}\n'.format(args.style_layers))
-    f.write('optimizer_type: {}\n'.format(args.optimizer))
-    f.write('max_iterations: {}\n'.format(args.max_iterations))
-    f.write('max_image_size: {}\n'.format(args.max_size))
-    f.close()
+        if args.style_mask_imgs is not None:
+            for index, mask in enumerate(args.style_mask_imgs):
+                f.write('style_masks[' + str(index) + ']: {}\n'.format(mask))
+                index += 1
+        f.write('init_type: {}\n'.format(args.init_img_type))
+        f.write('content_weight: {}\n'.format(args.content_weight))
+        f.write('style_weight: {}\n'.format(args.style_weight))
+        f.write('tv_weight: {}\n'.format(args.tv_weight))
+        f.write('content_layers: {}\n'.format(args.content_layers))
+        f.write('style_layers: {}\n'.format(args.style_layers))
+        f.write('optimizer_type: {}\n'.format(args.optimizer))
+        f.write('max_iterations: {}\n'.format(args.max_iterations))
+        f.write('max_image_size: {}\n'.format(args.max_size))
 
 
 '''

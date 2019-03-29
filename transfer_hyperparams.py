@@ -14,14 +14,15 @@ def main():
     hparams = {
         # 'style_weight': [1e2, 1e3, 1e4, 1e5, 1e6],
         # 'content_weight': [5e-2, 5e-1, 5e0, 5e1, 5e2],
-        'style_weight': [1e3, 1e4, 1e5],
-        'content_weight': [5e-1, 5e0, 5e1],
-        'init_img_type': ['random', 'content', 'style'],
+        'style_weight': [1e2, 1e3, 1e4, 1e5],
+        'content_weight': [5e-1, 2e0, 5e0, 5e1],
+        'init_img_type': ['random', 'content'],
         # 'original_colors': [True, False],  # tried in hparams-result-2019-03-28--21-36, better with color transfer
     }
     # constraints must hold for config
     constraints = [
-        lambda p: (p['style_weight'] / p['content_weight'] >= 1) and (p['style_weight'] / p['content_weight'] <= 500),    # empirically found that too high loss compared to content deforms too much, and too low does not change image
+        lambda p: (p['style_weight'] / p['content_weight'] >= 1) and (p['style_weight'] / p['content_weight'] <= 500),
+        # empirically found that too high loss compared to content deforms too much, and too low does not change image
     ]
     out_dir = osp.join(args.img_output_dir, 'hparams-result-' + datetime.now().strftime('%Y-%m-%d--%H-%M'))
     with tf.Graph().as_default(), tf.device(args.device), tf.Session() as sess:
@@ -32,7 +33,7 @@ def main():
         for param_set in itertools.product(*hparams.values()):
             params_dict = dict(zip(hparams.keys(), param_set))
             if any([not c(params_dict) for c in constraints]):
-                continue    # skip if any of constrains does not hols
+                continue  # skip if any of constrains does not hols
 
             for key, value in params_dict.items():
                 setattr(neural_style.args, key, value)
@@ -47,7 +48,7 @@ def main():
             tock = time.time()
             print('Single image elapsed time: {}'.format(tock - tick))
 
-            write_image_output(out_dir, output_img, content_img, style_imgs, init_img, prefix=str(param_set)+'_')
+            write_image_output(out_dir, output_img, content_img, style_imgs, init_img, prefix=str(param_set) + '_')
 
 
 if __name__ == '__main__':

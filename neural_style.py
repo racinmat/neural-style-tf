@@ -15,7 +15,7 @@ import os
 '''
 
 
-def parse_args():
+def parse_args(argv=None):  # argv, so it can be used from jupyter
     desc = "TensorFlow implementation of 'A Neural Algorithm for Artistic Style'"
     parser = argparse.ArgumentParser(description=desc)
 
@@ -214,7 +214,7 @@ def parse_args():
                         default=800,
                         help='Maximum number of optimizer iterations for each frame after the first frame. (default: %(default)s)')
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # normalize weights
     args.style_layer_weights = normalize(args.style_layer_weights)

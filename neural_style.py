@@ -222,12 +222,14 @@ def parse_args():
 
     # create directories for output
     if args.video:
-        maybe_make_directory(args.video_output_dir)
+        os.makedirs(args.video_output_dir, exist_ok=True)
     else:
-        maybe_make_directory(args.img_output_dir)
+        os.makedirs(args.img_output_dir, exist_ok=True)
 
     return args
 
+
+vgg_rawnet = None
 
 '''
   pre-trained vgg19 convolutional neural network
@@ -241,7 +243,9 @@ def build_model(input_img):
     _, h, w, d = input_img.shape
 
     if args.verbose: print(f'{datetime.now()} loading model weights...')
-    vgg_rawnet = scipy.io.loadmat(args.model_weights)
+    global vgg_rawnet
+    if vgg_rawnet is None:
+        vgg_rawnet = scipy.io.loadmat(args.model_weights)
     vgg_layers = vgg_rawnet['layers'][0]
     if args.verbose: print(f'{datetime.now()} constructing layers...')
     net['input'] = tf.Variable(np.zeros((1, h, w, d), dtype=np.float32))
@@ -570,11 +574,6 @@ def normalize(weights):
         return [0.] * len(weights)
 
 
-def maybe_make_directory(dir_path):
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
-
-
 def check_image(img, path):
     if img is None:
         raise OSError(errno.ENOENT, "No such file", path)
@@ -679,8 +678,8 @@ def write_video_output(frame, output_img):
 
 
 def write_image_output(output_img, content_img, style_imgs, init_img):
-    out_dir = os.path.join(args.img_output_dir, args.img_name)
-    maybe_make_directory(out_dir)
+    out_dir = args.img_output_dir
+    os.makedirs(out_dir, exist_ok=True)
     img_path = os.path.join(out_dir, args.img_name + '.png')
     content_path = os.path.join(out_dir, 'content.png')
     init_path = os.path.join(out_dir, 'init.png')

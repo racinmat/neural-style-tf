@@ -1,4 +1,6 @@
 from datetime import datetime
+from typing import Union
+
 import tensorflow as tf
 import numpy as np
 import scipy.io
@@ -905,6 +907,9 @@ def render_video():
                 stylize(content_frame, style_imgs, init_img, frame)
                 tock = time.time()
                 print('Frame {} elapsed time: {}'.format(frame, tock - tick))
+
+
+args = None  # type: Union[argparse.Namespace, None]
 
 
 def main():

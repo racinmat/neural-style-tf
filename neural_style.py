@@ -239,20 +239,20 @@ vgg_rawnet = None
 '''
 
 
-def build_model(input_img):
+def build_model(input_img_shape, verbose: bool, model_weights):
     if args.verbose: print(f'\n{datetime.now()} BUILDING VGG-19 NETWORK')
     net = {}
-    _, h, w, d = input_img.shape
+    _, h, w, d = input_img_shape
 
     if args.verbose: print(f'{datetime.now()} loading model weights...')
     global vgg_rawnet
     if vgg_rawnet is None:
-        vgg_rawnet = scipy.io.loadmat(args.model_weights)
+        vgg_rawnet = scipy.io.loadmat(model_weights)
     vgg_layers = vgg_rawnet['layers'][0]
-    if args.verbose: print(f'{datetime.now()} constructing layers...')
+    if verbose: print(f'{datetime.now()} constructing layers...')
     net['input'] = tf.Variable(np.zeros((1, h, w, d), dtype=np.float32))
 
-    if args.verbose: print('LAYER GROUP 1')
+    if verbose: print('LAYER GROUP 1')
     net['conv1_1'] = conv_layer('conv1_1', net['input'], W=get_weights(vgg_layers, 0))
     net['relu1_1'] = relu_layer('relu1_1', net['conv1_1'], b=get_bias(vgg_layers, 0))
 
@@ -261,7 +261,7 @@ def build_model(input_img):
 
     net['pool1'] = pool_layer('pool1', net['relu1_2'])
 
-    if args.verbose: print('LAYER GROUP 2')
+    if verbose: print('LAYER GROUP 2')
     net['conv2_1'] = conv_layer('conv2_1', net['pool1'], W=get_weights(vgg_layers, 5))
     net['relu2_1'] = relu_layer('relu2_1', net['conv2_1'], b=get_bias(vgg_layers, 5))
 
@@ -270,7 +270,7 @@ def build_model(input_img):
 
     net['pool2'] = pool_layer('pool2', net['relu2_2'])
 
-    if args.verbose: print('LAYER GROUP 3')
+    if verbose: print('LAYER GROUP 3')
     net['conv3_1'] = conv_layer('conv3_1', net['pool2'], W=get_weights(vgg_layers, 10))
     net['relu3_1'] = relu_layer('relu3_1', net['conv3_1'], b=get_bias(vgg_layers, 10))
 
@@ -285,7 +285,7 @@ def build_model(input_img):
 
     net['pool3'] = pool_layer('pool3', net['relu3_4'])
 
-    if args.verbose: print('LAYER GROUP 4')
+    if verbose: print('LAYER GROUP 4')
     net['conv4_1'] = conv_layer('conv4_1', net['pool3'], W=get_weights(vgg_layers, 19))
     net['relu4_1'] = relu_layer('relu4_1', net['conv4_1'], b=get_bias(vgg_layers, 19))
 
@@ -300,7 +300,7 @@ def build_model(input_img):
 
     net['pool4'] = pool_layer('pool4', net['relu4_4'])
 
-    if args.verbose: print(f'{datetime.now()} LAYER GROUP 5')
+    if verbose: print(f'{datetime.now()} LAYER GROUP 5')
     net['conv5_1'] = conv_layer('conv5_1', net['pool4'], W=get_weights(vgg_layers, 28))
     net['relu5_1'] = relu_layer('relu5_1', net['conv5_1'], b=get_bias(vgg_layers, 28))
 
@@ -589,53 +589,51 @@ def check_image(img, path):
 def stylize(content_img, style_imgs, init_img, frame=None):
     with tf.device(args.device), tf.Session() as sess:
         # setup network
-        net = build_model(content_img)
+        net = build_model(content_img.shape, args.verbose, args.model_weights)
+        run_stylization_and_output(content_img, frame, init_img, net, sess, style_imgs)
 
-        # style loss
-        if args.style_mask:
-            L_style = sum_masked_style_losses(sess, net, style_imgs)
-        else:
-            L_style = sum_style_losses(sess, net, style_imgs)
 
-        # content loss
-        L_content = sum_content_losses(sess, net, content_img)
+def run_stylization_and_output(content_img, frame, init_img, net, sess, style_imgs):
+    output_img = run_stylization(content_img, frame, init_img, net, sess, style_imgs)
+    if args.original_colors:
+        output_img = convert_to_original_colors(np.copy(content_img), output_img)
+    if args.video:
+        write_video_output(frame, output_img)
+    else:
+        write_image_output(output_img, content_img, style_imgs, init_img)
 
-        # denoising loss
-        L_tv = tf.image.total_variation(net['input'])
 
-        # loss weights
-        alpha = args.content_weight
-        beta = args.style_weight
-        theta = args.tv_weight
-
-        # total loss
-        L_total = alpha * L_content
-        L_total += beta * L_style
-        L_total += theta * L_tv
-
-        # video temporal loss
-        if args.video and frame > 1:
-            gamma = args.temporal_weight
-            L_temporal = sum_shortterm_temporal_losses(sess, net, frame, init_img)
-            L_total += gamma * L_temporal
-
-        # optimization algorithm
-        optimizer = get_optimizer(L_total)
-
-        if args.optimizer == 'adam':
-            minimize_with_adam(sess, net, optimizer, init_img, L_total)
-        elif args.optimizer == 'lbfgs':
-            minimize_with_lbfgs(sess, net, optimizer, init_img)
-
-        output_img = sess.run(net['input'])
-
-        if args.original_colors:
-            output_img = convert_to_original_colors(np.copy(content_img), output_img)
-
-        if args.video:
-            write_video_output(frame, output_img)
-        else:
-            write_image_output(output_img, content_img, style_imgs, init_img)
+def run_stylization(content_img, frame, init_img, net, sess, style_imgs):
+    # style loss
+    if args.style_mask:
+        L_style = sum_masked_style_losses(sess, net, style_imgs)
+    else:
+        L_style = sum_style_losses(sess, net, style_imgs)
+    # content loss
+    L_content = sum_content_losses(sess, net, content_img)
+    # denoising loss
+    L_tv = tf.image.total_variation(net['input'])
+    # loss weights
+    alpha = args.content_weight
+    beta = args.style_weight
+    theta = args.tv_weight
+    # total loss
+    L_total = alpha * L_content
+    L_total += beta * L_style
+    L_total += theta * L_tv
+    # video temporal loss
+    if args.video and frame > 1:
+        gamma = args.temporal_weight
+        L_temporal = sum_shortterm_temporal_losses(sess, net, frame, init_img)
+        L_total += gamma * L_temporal
+    # optimization algorithm
+    optimizer = get_optimizer(L_total)
+    if args.optimizer == 'adam':
+        minimize_with_adam(sess, net, optimizer, init_img, L_total)
+    elif args.optimizer == 'lbfgs':
+        minimize_with_lbfgs(sess, net, optimizer, init_img)
+    output_img = sess.run(net['input'])
+    return output_img
 
 
 def minimize_with_lbfgs(sess, net, optimizer, init_img):

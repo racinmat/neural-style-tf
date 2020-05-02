@@ -587,6 +587,7 @@ def check_image(img, path):
 
 prev_net_cache = None
 sess = None
+graph = None
 
 
 def stylize(content_img, style_imgs, init_img, frame=None):
@@ -883,9 +884,12 @@ def convert_to_original_colors(content_img, stylized_img):
 
 
 def render_single_image():
+    global graph
     content_img = get_content_image(args.content_img)
     style_imgs = get_style_images(content_img)
-    with tf.Graph().as_default():
+    if graph is None:
+        graph = tf.Graph()
+    with graph.as_default():
         print('\n---- RENDERING SINGLE IMAGE ----\n')
         init_img = get_init_image(args.init_img_type, content_img, style_imgs)
         tick = time.time()

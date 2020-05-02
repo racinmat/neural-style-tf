@@ -590,13 +590,13 @@ sess = None
 graph = None
 
 
-def stylize(content_img, style_imgs, init_img, frame=None):
+def stylize(content_img, style_imgs, init_img, frame=None, config=None):
     global prev_net_cache
     global sess
     with tf.device(args.device):
         if prev_net_cache is None or prev_net_cache[0] != content_img.shape:
             if sess is not None: sess.close()
-            sess = tf.Session()
+            sess = tf.Session(config=config)
             # setup network
             net = build_model(content_img.shape, args.verbose, args.model_weights)
             prev_net_cache = (content_img.shape, net)
@@ -883,7 +883,7 @@ def convert_to_original_colors(content_img, stylized_img):
     return dst
 
 
-def render_single_image():
+def render_single_image(config=None):
     global graph
     content_img = get_content_image(args.content_img)
     style_imgs = get_style_images(content_img)
@@ -891,7 +891,7 @@ def render_single_image():
         graph = tf.Graph()
     with graph.as_default():
         init_img = get_init_image(args.init_img_type, content_img, style_imgs)
-        stylize(content_img, style_imgs, init_img)
+        stylize(content_img, style_imgs, init_img, config=config)
 
 
 def render_video():

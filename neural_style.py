@@ -890,12 +890,8 @@ def render_single_image():
     if graph is None:
         graph = tf.Graph()
     with graph.as_default():
-        print('\n---- RENDERING SINGLE IMAGE ----\n')
         init_img = get_init_image(args.init_img_type, content_img, style_imgs)
-        tick = time.time()
         stylize(content_img, style_imgs, init_img)
-        tock = time.time()
-        print('Single image elapsed time: {}'.format(tock - tick))
 
 
 def render_video():

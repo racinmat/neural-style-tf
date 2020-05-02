@@ -585,11 +585,22 @@ def check_image(img, path):
   rendering -- where the magic happens
 '''
 
+prev_net_cache = None
+sess = None
+
 
 def stylize(content_img, style_imgs, init_img, frame=None):
-    with tf.device(args.device), tf.Session() as sess:
-        # setup network
-        net = build_model(content_img.shape, args.verbose, args.model_weights)
+    global prev_net_cache
+    global sess
+    with tf.device(args.device):
+        if prev_net_cache is None or prev_net_cache[0] != content_img.shape:
+            if sess is not None: sess.close()
+            sess = tf.Session()
+            # setup network
+            net = build_model(content_img.shape, args.verbose, args.model_weights)
+            prev_net_cache = (content_img.shape, net)
+        else:
+            net = prev_net_cache[1]
         run_stylization_and_output(content_img, frame, init_img, net, sess, style_imgs)
 
 

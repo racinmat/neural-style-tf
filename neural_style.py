@@ -232,6 +232,7 @@ def parse_args():
 
 
 vgg_rawnet = None
+TERSE_OUTPUT = False
 
 '''
   pre-trained vgg19 convolutional neural network
@@ -697,13 +698,14 @@ def write_image_output(output_img, content_img, style_imgs, init_img):
     init_path = os.path.join(out_dir, 'init.png')
 
     write_image(img_path, output_img)
-    write_image(content_path, content_img)
-    write_image(init_path, init_img)
-    index = 0
-    for style_img in style_imgs:
-        path = os.path.join(out_dir, 'style_' + str(index) + '.png')
-        write_image(path, style_img)
-        index += 1
+    if not TERSE_OUTPUT:
+        write_image(content_path, content_img)
+        write_image(init_path, init_img)
+        index = 0
+        for style_img in style_imgs:
+            path = os.path.join(out_dir, 'style_' + str(index) + '.png')
+            write_image(path, style_img)
+            index += 1
 
     # save the configuration settings
     out_file = os.path.join(out_dir, 'meta_data.txt')

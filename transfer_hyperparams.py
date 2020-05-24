@@ -48,7 +48,7 @@ def main():
             tock = time.time()
             print('Single image elapsed time: {}'.format(tock - tick))
 
-            write_image_output(out_dir, output_img, content_img, style_imgs, init_img, prefix=str(param_set) + '_')
+            write_image_output(output_img, content_img, style_imgs, init_img, prefix=str(param_set) + '_')
 
 
 if __name__ == '__main__':

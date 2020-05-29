@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Union
+from typing import Union, Optional
 
 import tensorflow as tf
 import numpy as np
@@ -587,7 +587,7 @@ def check_image(img, path):
 '''
 
 prev_net_cache = None
-sess = None
+sess = None  # type: Optional[tf.Session]
 graph = None
 
 
@@ -659,17 +659,18 @@ def minimize_with_lbfgs(sess, net, optimizer, init_img):
 
 def minimize_with_adam(sess, net, optimizer, init_img, loss):
     if args.verbose: print('\nMINIMIZING LOSS USING: ADAM OPTIMIZER')
-    train_op = optimizer.minimize(loss)
-    init_op = tf.global_variables_initializer()
-    sess.run(init_op)
-    sess.run(net['input'].assign(init_img))
-    iterations = 0
-    while (iterations < args.max_iterations):
-        sess.run(train_op)
-        if iterations % args.print_iterations == 0 and args.verbose:
-            curr_loss = loss.eval()
-            print("At iterate {}\tf=  {}".format(iterations, curr_loss))
-        iterations += 1
+    with sess.as_default():
+        train_op = optimizer.minimize(loss)
+        init_op = tf.global_variables_initializer()
+        sess.run(init_op)
+        sess.run(net['input'].assign(init_img))
+        iterations = 0
+        while (iterations < args.max_iterations):
+            sess.run(train_op)
+            if iterations % args.print_iterations == 0 and args.verbose:
+                curr_loss = loss.eval()
+                print("At iterate {}\tf=  {}".format(iterations, curr_loss))
+            iterations += 1
 
 
 def get_optimizer(loss):
@@ -681,6 +682,8 @@ def get_optimizer(loss):
                      'disp': print_iterations})
     elif args.optimizer == 'adam':
         optimizer = tf.train.AdamOptimizer(args.learning_rate)
+    else:
+        raise Exception(f'unknown optimizer {args.optimizer}')
     return optimizer
 
 
